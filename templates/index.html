@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Tracker & Social Composer</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-glow"></div>
+                <i class="fa-solid fa-database database-icon"></i>
+                <div class="title-meta">
+                    <h1>BigQuery Updates</h1>
+                    <span class="subtitle">Cloud Release Notes & Social Composer</span>
+                </div>
+            </div>
+            
+            <div class="sync-controls">
+                <div class="sync-status" id="syncStatus">
+                    <span class="status-indicator live"></span>
+                    <span class="status-text" id="lastFetchedText">Checking feed...</span>
+                </div>
+                <button id="refreshBtn" class="btn btn-primary btn-refresh" title="Refresh Release Notes">
+                    <i class="fa-solid fa-arrows-rotate spinner" id="refreshIcon"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Layout -->
+        <main class="dashboard-grid">
+            
+            <!-- Feed Section (Left) -->
+            <section class="feed-section">
+                <!-- Search and Filters Bar -->
+                <div class="controls-bar">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="searchInput" placeholder="Search updates, features, or keywords..." autocomplete="off">
+                        <button id="clearSearch" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    
+                    <div class="filter-group" id="filterGroup">
+                        <button class="filter-chip active" data-type="all">All <span class="badge" id="count-all">0</span></button>
+                        <button class="filter-chip" data-type="Feature">Features <span class="badge" id="count-feature">0</span></button>
+                        <button class="filter-chip" data-type="Change">Changes <span class="badge" id="count-change">0</span></button>
+                        <button class="filter-chip" data-type="Fix">Fixes <span class="badge" id="count-fix">0</span></button>
+                        <button class="filter-chip" data-type="Deprecation">Deprecations <span class="badge" id="count-deprecation">0</span></button>
+                        <button class="filter-chip" data-type="Issue">Issues <span class="badge" id="count-issue">0</span></button>
+                    </div>
+                </div>
+
+                <!-- Feed Timeline -->
+                <div class="timeline-container">
+                    <div class="timeline-line"></div>
+                    <div id="notesFeed" class="notes-feed">
+                        <!-- Loading State -->
+                        <div class="loading-state" id="feedLoading">
+                            <div class="pulse-loader"></div>
+                            <p>Fetching BigQuery release notes...</p>
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div class="empty-state" id="feedEmpty" style="display: none;">
+                            <i class="fa-regular fa-folder-open empty-icon"></i>
+                            <h3>No updates found</h3>
+                            <p>Try adjusting your filters or search keywords.</p>
+                        </div>
+                        
+                        <!-- Cards will be dynamically inserted here -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Composer Sidebar (Right) -->
+            <aside class="composer-sidebar">
+                <div class="composer-card" id="composerCard">
+                    <!-- Unselected State -->
+                    <div class="composer-unselected" id="composerUnselected">
+                        <div class="unselected-illustration">
+                            <i class="fa-brands fa-x-twitter"></i>
+                            <div class="pulse-ring"></div>
+                        </div>
+                        <h3>No Update Selected</h3>
+                        <p>Select any release note on the left to customize and tweet about it instantly.</p>
+                    </div>
+                    
+                    <!-- Active State -->
+                    <div class="composer-active" id="composerActive" style="display: none;">
+                        <div class="composer-header">
+                            <div class="composer-title">
+                                <i class="fa-solid fa-pen-nib"></i>
+                                <h3>Tweet Composer</h3>
+                            </div>
+                            <span class="selected-badge" id="selectedBadge">Feature</span>
+                        </div>
+                        
+                        <div class="selected-summary-box">
+                            <span class="summary-label">Selected Update:</span>
+                            <p id="composerSummaryText">Loading details...</p>
+                            <span class="summary-date" id="composerSummaryDate">June 15, 2026</span>
+                        </div>
+
+                        <!-- Tone Switcher -->
+                        <div class="tone-section">
+                            <label class="section-label">Composer Tone</label>
+                            <div class="tone-grid">
+                                <button class="tone-btn active" data-tone="standard" title="Professional and clean update summary">
+                                    <i class="fa-solid fa-briefcase"></i>
+                                    <span>Standard</span>
+                                </button>
+                                <button class="tone-btn" data-tone="hype" title="Excited and engaging update news">
+                                    <i class="fa-solid fa-fire"></i>
+                                    <span>Hype</span>
+                                </button>
+                                <button class="tone-btn" data-tone="technical" title="Focused on developer features and SQL details">
+                                    <i class="fa-solid fa-code"></i>
+                                    <span>Tech</span>
+                                </button>
+                                <button class="tone-btn" data-tone="short" title="Short, concise summary fits easily">
+                                    <i class="fa-solid fa-compress"></i>
+                                    <span>Minimal</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tweet Editor -->
+                        <div class="editor-section">
+                            <label class="section-label" for="tweetTextarea">Tweet Text</label>
+                            <div class="textarea-wrapper">
+                                <textarea id="tweetTextarea" rows="6" placeholder="Customize your tweet here..."></textarea>
+                                <div class="textarea-glow"></div>
+                            </div>
+                            
+                            <div class="editor-footer">
+                                <span class="character-count" id="charCountLabel">
+                                    <span id="charCount">0</span>/280
+                                </span>
+                                <div class="progress-ring-container">
+                                    <svg class="progress-ring" width="24" height="24">
+                                        <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.1)" stroke-width="2" fill="transparent" r="10" cx="12" cy="12"/>
+                                        <circle class="progress-ring__circle" id="charProgressCircle" stroke="#3b82f6" stroke-width="2.5" fill="transparent" r="10" cx="12" cy="12"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Share Actions -->
+                        <div class="action-section">
+                            <button id="tweetBtn" class="btn btn-x-twitter">
+                                <i class="fa-brands fa-x-twitter"></i>
+                                <span>Post to X</span>
+                            </button>
+                            <button id="copyBtn" class="btn btn-secondary">
+                                <i class="fa-regular fa-copy" id="copyIcon"></i>
+                                <span id="copyText">Copy Text</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            
+        </main>
+        
+        <!-- Toast Notification -->
+        <div id="toast" class="toast">
+            <i class="fa-solid fa-circle-check toast-icon"></i>
+            <span id="toastMsg">Success message</span>
+        </div>
+    </div>
+    
+    <!-- JavaScript Code -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
