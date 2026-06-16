@@ -530,6 +530,42 @@ body {
     box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
 }
 
+/* Card actions buttons group */
+.card-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-btn-copy {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    font-size: 13px;
+    outline: none;
+}
+
+.card-btn-copy:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+.card-btn-copy.copied {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: var(--type-feature);
+    color: var(--type-feature);
+}
+
 /* Composer Sidebar Card */
 .composer-sidebar {
     position: sticky;

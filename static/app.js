@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // State management
     let allNotes = [];
+    let displayedNotes = [];
     let activeTypeFilter = 'all';
     let searchQuery = '';
     let selectedNote = null;
@@ -9,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const refreshBtn = document.getElementById('refreshBtn');
     const refreshIcon = document.getElementById('refreshIcon');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
     const syncStatusText = document.getElementById('lastFetchedText');
     
     const searchInput = document.getElementById('searchInput');
@@ -50,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event Listeners
     refreshBtn.addEventListener('click', () => fetchNotes(true));
+    exportCsvBtn.addEventListener('click', () => exportDisplayedNotesToCSV());
     
     searchInput.addEventListener('input', (e) => {
         searchQuery = e.target.value.toLowerCase();
@@ -192,6 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
         
+        displayedNotes = filtered;
         renderNotes(filtered);
     }
 
@@ -255,12 +259,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     <a href="${note.link}" target="_blank" rel="noopener noreferrer" class="card-link" onclick="event.stopPropagation()">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> Original release notes
                     </a>
-                    <div class="card-tweet-indicator">
-                        <i class="fa-brands fa-x-twitter"></i>
-                        <span>Select to Tweet</span>
+                    <div class="card-action-buttons">
+                        <button class="card-btn-copy" title="Copy raw update to clipboard" onclick="event.stopPropagation()">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                        <div class="card-tweet-indicator">
+                            <i class="fa-brands fa-x-twitter"></i>
+                            <span>Select to Tweet</span>
+                        </div>
                     </div>
                 </div>
             `;
+            
+            // Attach individual copy button listener
+            const copyCardBtn = card.querySelector('.card-btn-copy');
+            copyCardBtn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent selecting card
+                try {
+                    await navigator.clipboard.writeText(note.raw_text);
+                    showToast('Update copied to clipboard!');
+                    
+                    // Visual feedback
+                    const icon = copyCardBtn.querySelector('i');
+                    icon.className = 'fa-solid fa-check';
+                    copyCardBtn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        icon.className = 'fa-regular fa-copy';
+                        copyCardBtn.classList.remove('copied');
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy card text:', err);
+                    showToast('Failed to copy content', true);
+                }
+            });
             
             card.addEventListener('click', () => selectNote(note));
             notesFeed.appendChild(card);
@@ -397,5 +429,47 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             toast.classList.remove('show');
         }, 3000);
+    }
+
+    // CSV Exporter
+    function exportDisplayedNotesToCSV() {
+        if (displayedNotes.length === 0) {
+            showToast('No notes to export', true);
+            return;
+        }
+        
+        const headers = ['Date', 'Type', 'Content', 'Link'];
+        const rows = [headers];
+        
+        displayedNotes.forEach(note => {
+            rows.push([
+                note.date,
+                note.type,
+                note.raw_text,
+                note.link
+            ]);
+        });
+        
+        const csvContent = rows.map(row => 
+            row.map(val => {
+                const escaped = ('' + val).replace(/"/g, '""');
+                return `"${escaped}"`;
+            }).join(',')
+        ).join('\r\n');
+        
+        try {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `bigquery_release_notes_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('CSV export successful!');
+        } catch (err) {
+            console.error('Failed to export CSV:', err);
+            showToast('Export failed', true);
+        }
     }
 });
